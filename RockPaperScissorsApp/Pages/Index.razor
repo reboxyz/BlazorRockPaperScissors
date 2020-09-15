@@ -1,0 +1,109 @@
+﻿@page "/"
+@using System.Timers
+@using RockPaperScissorsApp.Helpers
+@implements IDisposable
+
+<h1>Rock, Paper and Scissors</h1>
+
+@if(!string.IsNullOrEmpty(resultMessage))
+{
+    <h3 style="color:@resultMessageColor">@resultMessage</h3>
+}
+
+<button class="btn btn-info" @onclick="PlayAgain">Play Again</button>
+<div id="image-container-opponent" style="display: flex; justify-content: center; margin-bottom: 20px;">
+    <img src="@opponentHand.Image"  class="image"/>
+</div>
+
+<div id="image-select" style="display: flex; justify-content: space-around">
+    @foreach (var hand in hands)
+    {
+        <img 
+            src="@hand.Image"  
+            class="image selectable-image"
+            @onclick="@(() => SelectHand(hand))"
+        />    
+    }
+</div>
+
+@code {
+    List<Hand> hands = new List<Hand>()
+        {
+            new Hand{
+                Selection = OptionRPS.Paper,
+                LosesAgainst = OptionRPS.Scissors,
+                WinsAgainst = OptionRPS.Rock,
+                Image = "img/paper.jpg"
+            },
+            new Hand{
+                Selection = OptionRPS.Scissors,
+                LosesAgainst = OptionRPS.Rock,
+                WinsAgainst = OptionRPS.Paper,
+                Image = "img/scissors.jpg"
+            },
+            new Hand{
+                Selection = OptionRPS.Rock,
+                LosesAgainst = OptionRPS.Paper,
+                WinsAgainst = OptionRPS.Scissors,
+                Image = "img/rock.jpg"
+            }
+        };
+    Timer timer;
+    Hand opponentHand;
+    int indexOpponentHand = 0;      // Initialized to first element
+    string resultMessage = "";
+    string resultMessageColor = "";
+
+    protected override void OnInitialized()
+    {
+        opponentHand = hands[indexOpponentHand]; 
+        timer = new Timer();
+        timer.Interval = 300;
+        timer.Elapsed += TimerOnElapsed;
+        timer.Start();
+    }
+
+    private void TimerOnElapsed(object sender, ElapsedEventArgs e)
+    {
+        indexOpponentHand = (indexOpponentHand + 1)  % hands.Count;
+        opponentHand = hands[indexOpponentHand]; 
+        //Console.WriteLine("TimerOnElapsed executed");
+        StateHasChanged();    // Explicitly force re-render
+    }
+
+    private void SelectHand(Hand selectedHand)
+    {
+        timer.Stop();
+        var result = selectedHand.PlayAgaints(opponentHand);
+
+        if (result == GameStatus.Victory)
+        {
+            resultMessage = "You won!";
+            resultMessageColor = "green";
+        } else if (result == GameStatus.Loss)
+        {
+            resultMessage = "You loss!";
+            resultMessageColor = "red";
+        } else 
+        {
+            resultMessage = "Draw!";
+            resultMessageColor = "blue";
+        }
+    }
+
+    private void PlayAgain()
+    {
+        resultMessage = "";
+        resultMessageColor = "";
+        timer.Start();
+    }
+
+    public void Dispose()
+    {
+        if (timer != null)
+        {
+            timer.Dispose();
+        }
+    }
+
+}    
